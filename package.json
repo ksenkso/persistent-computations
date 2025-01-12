@@ -1,0 +1,28 @@
+{
+  "name": "persistent-computations",
+  "version": "1.0.0",
+  "type": "module",
+  "module": "src/index.js",
+  "main": "src/index.js",
+  "author": "ksenkso",
+  "license": "MIT",
+  "description": "A library for building computations with steps that can be persisted and recovered",
+  "scripts": {
+    "lint": "eslint --fix && prettier . --write",
+    "test": "NODE_V8_COVERAGE=coverage node --experimental-test-coverage tests/index.js"
+  },
+  "dependencies": {
+    "debug": "^4.3.7",
+    "fast-deep-equal": "^3.1.3"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.13.0",
+    "eslint": "^9.13.0",
+    "eslint-config-prettier": "^9.1.0",
+    "globals": "^15.11.0",
+    "prettier": "^3.3.3"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
