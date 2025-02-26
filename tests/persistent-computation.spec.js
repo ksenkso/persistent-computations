@@ -1,8 +1,7 @@
 import { describe, it, mock } from 'node:test';
 import * as assert from 'node:assert';
-import { PersistentComputationContext as PCContext } from '../src/persistent-computation-context.js';
+import { PersistentComputation, PCContext } from '../src/index.js';
 import { OneStepComputation } from './utils.js';
-import { PersistentComputation } from '../src/persistent-computation.js';
 
 describe('PersistentComputation', () => {
   it('should throw if the `run` method has not been overridden', async () => {

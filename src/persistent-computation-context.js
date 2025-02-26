@@ -267,5 +267,3 @@ export class PersistentComputationContext {
   }
 }
 
-export const PCContext = PersistentComputationContext;
-export const PCContextOptions = PersistentComputationContextOptions;

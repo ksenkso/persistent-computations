@@ -3,7 +3,7 @@ import * as assert from 'node:assert';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as v8 from 'node:v8';
-import { PCContext, PCContextOptions } from '../src/persistent-computation-context.js';
+import { PCContext, PCContextOptions } from '../src/index.js';
 import { DEBUG_LEVEL } from '../src/utils.js';
 import {
   mockTransport,
