@@ -6,6 +6,7 @@ import * as v8 from 'node:v8';
 import { PCContext, PCContextOptions } from '../src/index.js';
 import { DEBUG_LEVEL } from '../src/utils.js';
 import {
+  ConfigurableComputation,
   mockTransport,
   MultiStepComputation,
   NOOP,
@@ -22,18 +23,33 @@ afterEach(() => {
 });
 
 describe('PersistentComputationContext', () => {
+  describe('Run', () => {
+    it('should allow to mix classes and instances in the `run` method', async () => {
+      const transport = transportWithData();
+      const ctx = new PCContext({ transport });
+      await ctx.run([new ConfigurableComputation(42)]);
+
+      assert.deepEqual(ctx.getResult(ConfigurableComputation), {
+        name: 'ConfigurableComputation',
+        value: 42,
+      });
+    });
+  });
   describe('Options', () => {
     it('should be able to be created with no options', () => {
       const ctx = new PCContext();
 
-      assert.deepEqual({
-        fromScratch: false,
-        recoveryDataLocation: path.resolve(process.cwd(), '.recovery'),
-        debugLevel: DEBUG_LEVEL.NONE,
-        logger: PCContextOptions.defaultOptions.logger,
-        transformer: PCContextOptions.defaultOptions.transformer,
-        transport: PCContextOptions.defaultOptions.transport,
-      }, ctx.options);
+      assert.deepEqual(
+        {
+          fromScratch: false,
+          recoveryDataLocation: path.resolve(process.cwd(), '.recovery'),
+          debugLevel: DEBUG_LEVEL.NONE,
+          logger: PCContextOptions.defaultOptions.logger,
+          transformer: PCContextOptions.defaultOptions.transformer,
+          transport: PCContextOptions.defaultOptions.transport,
+        },
+        ctx.options,
+      );
     });
 
     it('should resolve recoveryDataLocation relative to current working directory', () => {
@@ -42,7 +58,10 @@ describe('PersistentComputationContext', () => {
         recoveryDataLocation,
       });
 
-      assert.equal(path.resolve(process.cwd(), recoveryDataLocation), ctx.options.recoveryDataLocation);
+      assert.equal(
+        path.resolve(process.cwd(), recoveryDataLocation),
+        ctx.options.recoveryDataLocation,
+      );
     });
   });
 
@@ -85,16 +104,7 @@ describe('PersistentComputationContext', () => {
     });
 
     it('should not recover from false values', async () => {
-      const falsyValues = [
-        null,
-        undefined,
-        false,
-        '',
-        0,
-        BigInt(0),
-        -0,
-        NaN,
-      ];
+      const falsyValues = [null, undefined, false, '', 0, BigInt(0), -0, NaN];
       const transport = mockTransport();
       const ctx = new PCContext({ transport });
 
@@ -135,7 +145,9 @@ describe('PersistentComputationContext', () => {
     });
 
     it('should recalculate step if there is no recovered data for the exact step', async () => {
-      const transport = transportWithData({ MultiStepComputation: [MultiStepComputation.STEP_DATA[0]] });
+      const transport = transportWithData({
+        MultiStepComputation: [MultiStepComputation.STEP_DATA[0]],
+      });
       const ctx = new PCContext({ transport });
       await ctx.run([MultiStepComputation]);
 
@@ -184,13 +196,16 @@ describe('PersistentComputationContext', () => {
       const transport = transportWithData();
       const ctx = new PCContext({ transport });
 
-      await assert.rejects(() => ctx.run([ThrowingComputation]), error => {
-        assert.equal(error.name, 'ComputationFailedError');
-        assert.equal(error.message.includes('ThrowingComputation'), true);
-        assert.equal(error.message.includes('ComputationErrorMessage'), true);
+      await assert.rejects(
+        () => ctx.run([ThrowingComputation]),
+        (error) => {
+          assert.equal(error.name, 'ComputationFailedError');
+          assert.equal(error.message.includes('ThrowingComputation'), true);
+          assert.equal(error.message.includes('ComputationErrorMessage'), true);
 
-        return true;
-      });
+          return true;
+        },
+      );
 
       assert.deepEqual(transport.write.mock.calls.length, 1);
     });
@@ -237,11 +252,12 @@ describe('PersistentComputationContext', () => {
     transformers.forEach(({ name, transformer }) => {
       describe(name, () => {
         it('should use serialize method from the transformer', async () => {
-          const transport = transportWithData({ MultiStepComputation: [MultiStepComputation.STEP_DATA[0]] });
+          const transport = transportWithData({
+            MultiStepComputation: [MultiStepComputation.STEP_DATA[0]],
+          });
           const ctx = new PCContext({ transport, transformer });
           await ctx.run([MultiStepComputation]);
           await ctx.flushRecoveryData();
-
 
           if (transformer) {
             assert.equal(transformer.serialize.mock.calls.length, 1);
@@ -250,7 +266,7 @@ describe('PersistentComputationContext', () => {
             assert.equal(ctx.transformer, PCContextOptions.defaultOptions.transformer);
           }
         });
-      })
+      });
     });
   });
 
@@ -330,10 +346,7 @@ describe('PersistentComputationContext', () => {
     it('should save the result of each step', async () => {
       const transport = transportWithData();
       const ctx = new PCContext({ transport });
-      await ctx.run([
-        OneStepComputation,
-        MultiStepComputation,
-      ]);
+      await ctx.run([OneStepComputation, MultiStepComputation]);
 
       assert.deepEqual(ctx.getResult(OneStepComputation), {
         name: 'OneStepComputation',
@@ -349,4 +362,3 @@ describe('PersistentComputationContext', () => {
     });
   });
 });
-

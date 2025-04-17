@@ -13,10 +13,7 @@ export class OneStepComputation extends PC {
 }
 
 export class MultiStepComputation extends PC {
-  static STEP_DATA = [
-    { data: 'step one' },
-    { data: 'step two' },
-  ];
+  static STEP_DATA = [{ data: 'step one' }, { data: 'step two' }];
   static stepOneDataProvider = mock.fn(NOOP, () => MultiStepComputation.STEP_DATA[0]);
   static stepTwoDataProvider = mock.fn(NOOP, () => MultiStepComputation.STEP_DATA[1]);
 
@@ -38,11 +35,7 @@ export class ThrowingComputation extends PC {
 }
 
 export function mockTransport(options = {}) {
-  const {
-    exists = true,
-    read = () => v8.serialize({ dependencies: {} }),
-    write = NOOP,
-  } = options;
+  const { exists = true, read = () => v8.serialize({ dependencies: {} }), write = NOOP } = options;
 
   return {
     exists: mock.fn(NOOP, () => exists),
@@ -51,14 +44,24 @@ export function mockTransport(options = {}) {
   };
 }
 
+export class ConfigurableComputation extends PC {
+  constructor(someParam) {
+    super(null);
+    this.someParam = someParam;
+  }
+
+  async run() {
+    return this.someParam;
+  }
+}
+
 export function transportWithData(computations = {}) {
   return mockTransport({
     read: () => v8.serialize({ dependencies: {}, computations }),
   });
 }
 
-export function NOOP() {
-}
+export function NOOP() {}
 
 export class TestTransformer {
   serialize = mock.fn();

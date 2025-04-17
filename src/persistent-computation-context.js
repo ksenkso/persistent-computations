@@ -31,8 +31,8 @@ export class PersistentComputationContextOptions {
       deserialize(value) {
         return v8.deserialize(value);
       },
-    }
-  }
+    },
+  };
 
   static create(optionsObject) {
     const options = { ...PersistentComputationContextOptions.defaultOptions };
@@ -89,7 +89,10 @@ export class PersistentComputationContext {
    */
   constructor(options = {}, dependencies = {}) {
     const defaultedOptions = PersistentComputationContextOptions.create(options);
-    defaultedOptions.recoveryDataLocation = path.resolve(process.cwd(), defaultedOptions.recoveryDataLocation);
+    defaultedOptions.recoveryDataLocation = path.resolve(
+      process.cwd(),
+      defaultedOptions.recoveryDataLocation,
+    );
 
     this.options = Object.freeze(defaultedOptions);
     this.#logger = defaultedOptions.logger;
@@ -111,19 +114,25 @@ export class PersistentComputationContext {
    *   If there was an error throw during recovery or run:
    *     save the step
    *     exit
-   * @param {typeof PersistentComputation[]} computationClasses
+   * @param {(typeof PersistentComputation | PersistentComputation)[]} computationClassesOrInstances
    * @param {any} [input]
    * @return {Promise<void>}
    * @throws {ComputationFailedError}
    */
-  async run(computationClasses, input) {
-    // this.recoveryData.dependencies.computationClasses = computationClasses
+  async run(computationClassesOrInstances, input) {
+    // this.recoveryData.dependencies.computationClassesOrInstances = computationClassesOrInstances
     //   .map(computationClass => computationClass.name);
     const recovered = await this.maybeRecover();
     let computationValue = input;
 
-    for (const Computation of computationClasses) {
-      const computation = new Computation(this);
+    for (const Computation of computationClassesOrInstances) {
+      let computation;
+      if (Computation instanceof Function) {
+        computation = new Computation(this);
+      } else {
+        computation = Computation;
+        computation.ctx = this;
+      }
 
       try {
         if (recovered) {
@@ -159,21 +168,18 @@ export class PersistentComputationContext {
         : 'Trying to recover data, no recoveryDataLocation provided',
     );
 
-    if (!await this.#transport.exists(recoveryDataLocation)) {
+    if (!(await this.#transport.exists(recoveryDataLocation))) {
       this.debug('No recovery data found');
       return false;
     }
 
-
     const data = await this.#transport.read(recoveryDataLocation);
     const recoveryData = this.#transformer.deserialize(data);
-
 
     if (!recoveryData) {
       this.debug('Recovery data object is falsy, skipping recovery');
       return false;
     }
-
 
     if (this.sameDeps(this.recoveryData.dependencies, recoveryData.dependencies)) {
       this.debug('Got the same dependencies as in the recovery data, applying');
@@ -182,7 +188,6 @@ export class PersistentComputationContext {
 
       return true;
     }
-
 
     this.debug('Got different dependencies in the recovery data');
     this.verbose('Current dependencies', this.recoveryData.dependencies);
@@ -206,7 +211,10 @@ export class PersistentComputationContext {
   }
 
   async flushRecoveryData() {
-    await this.#transport.write(this.options.recoveryDataLocation, this.#transformer.serialize(this.recoveryData))
+    await this.#transport.write(
+      this.options.recoveryDataLocation,
+      this.#transformer.serialize(this.recoveryData),
+    );
   }
 
   hasRecoveryData(computation) {
@@ -225,13 +233,17 @@ export class PersistentComputationContext {
   }
 
   getStepValue(computation) {
-    this.verbose(`Getting recovery data for ${computation.constructor.name}, step ${computation.currentStepIndex}`);
+    this.verbose(
+      `Getting recovery data for ${computation.constructor.name}, step ${computation.currentStepIndex}`,
+    );
 
-    return this.recoveryData.computations[computation.constructor.name][computation.currentStepIndex];
+    return this.recoveryData.computations[computation.constructor.name][
+      computation.currentStepIndex
+    ];
   }
 
   sameDeps(currentDeps, recoveredDeps) {
-    return fastDeepEqual(currentDeps, recoveredDeps)
+    return fastDeepEqual(currentDeps, recoveredDeps);
   }
 
   debug(...args) {
@@ -251,7 +263,7 @@ export class PersistentComputationContext {
   }
 
   pushResult(computation, value) {
-    this.#results.push({ name: computation.constructor.name, value })
+    this.#results.push({ name: computation.constructor.name, value });
   }
 
   getResult(computationClass) {
@@ -263,7 +275,6 @@ export class PersistentComputationContext {
   }
 
   getResultByName(computationName) {
-    return this.#results.find(result => result.name === computationName);
+    return this.#results.find((result) => result.name === computationName);
   }
 }
-

@@ -26,7 +26,7 @@ class TwoStepOperation extends PersistentComputation {
     // The value returned in the step's callback should be V8-serializable
     const firstStep = await this.step(async () => ({ foo: 'foo' }));
     const secondStep = await this.step(async () => ({ bar: 'bar' }));
-    
+
     return {
       firstStep,
       secondStep,
@@ -35,5 +35,5 @@ class TwoStepOperation extends PersistentComputation {
 }
 
 const ctx = new PersistentComputationContext();
-await ctx.run([TwoStepOperation])
+await ctx.run([TwoStepOperation]);
 ```
